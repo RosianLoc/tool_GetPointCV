@@ -1,78 +1,77 @@
 import os
 import json
 import time
+import shutil
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import JSONResponse
 
-# Import các module từ thư mục src
+# Import các module từ thư mục src của bạn
 from src.detector import get_cv_boxes
 from src.cropper import crop_and_save_regions
 from src.ocr_engine import extract_text_from_images
 from src.text_processor import clean_cv_data
 from src.matcher import calculate_cv_score
 
-def process_cv_pipeline(cv_image_path, jd_criteria):
-    """
-    Chạy toàn bộ quy trình: YOLO -> Cắt ảnh -> OCR -> Làm sạch -> Chấm điểm
-    """
-    print(f"\n{'='*50}")
-    print(f"BẮT ĐẦU XỬ LÝ CV: {os.path.basename(cv_image_path)}")
-    print(f"{'='*50}")
-    
-    start_time = time.time()
+# Khởi tạo App FastAPI
+app = FastAPI()
 
-    # Bước 1: YOLO Detect
-    print("1. Đang dùng YOLO trích xuất các vùng dữ liệu...")
+def process_cv_pipeline(cv_image_path):
+    """
+    Pipeline bây giờ chỉ cần làm đến đoạn Clean Data (Bước 4)
+    Vì việc tính điểm (Bước 5) mình đã dời sang NestJS để chống gian lận Form
+    """
     cv_regions = get_cv_boxes(cv_image_path)
     if not cv_regions:
-        print("-> [LỖI] YOLO không tìm thấy vùng dữ liệu nào.")
         return None
 
-    # Bước 2: Cắt ảnh
-    print("2. Đang cắt ảnh theo tọa độ...")
     cropped_image_paths = crop_and_save_regions(cv_image_path, cv_regions)
-
-    # Bước 3: Đọc chữ bằng OCR
-    print("3. Đang chạy PaddleOCR để đọc chữ...")
     raw_ocr_data = extract_text_from_images(cropped_image_paths)
-
-    # Bước 4: Làm sạch và chuẩn hóa dữ liệu
-    print("4. Đang làm sạch dữ liệu bằng Regex...")
     cleaned_cv_data = clean_cv_data(raw_ocr_data)
+    
+    return cleaned_cv_data
 
-    # Bước 5: Matching và chấm điểm
-    print("5. Đang đối chiếu với JD và chấm điểm...")
-    final_score = calculate_cv_score(cleaned_cv_data, jd_criteria)
+# ==========================================
+# MỞ API CHO NESTJS GỌI VÀO
+# ==========================================
+@app.post("/api/extract-cv")
+async def extract_cv_api(
+    file: UploadFile = File(...), 
+    jd_criteria: str = Form(...) # Nhận tiêu chí JD từ NestJS gửi sang (dù không dùng tính điểm nhưng cứ hứng để đó)
+):
+    start_time = time.time()
     
-    end_time = time.time()
-    
-    # --- IN BÁO CÁO TỔNG KẾT ---
-    print(f"\n{'*'*50}")
-    print("BÁO CÁO ĐÁNH GIÁ ỨNG VIÊN")
-    print(f"{'*'*50}")
-    print(json.dumps(cleaned_cv_data, ensure_ascii=False, indent=4))
-    print(f"\n[ĐIỂM SỐ]: {final_score['total']}/100")
-    print(f"[CHI TIẾT]: Position: {final_score['position']} | Level: {final_score['level']} | Address: {final_score['address']} | GPA: {final_score['gpa']} | Skill: {final_score['skill']}")
-    
-    if final_score['total'] >= 70:
-        print("=> [KẾT LUẬN]: ĐẠT YÊU CẦU, CHUYỂN QUA PHỎNG VẤN!")
-    else:
-        print("=> [KẾT LUẬN]: HỒ SƠ LOẠI.")
+    # 1. Lưu file NestJS gửi sang thành file tạm trên ổ cứng Python
+    temp_file_path = f"temp_{file.filename}"
+    with open(temp_file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
         
-    print(f"\nThời gian xử lý: {round(end_time - start_time, 2)} giây")
-    print(f"{'='*50}\n")
-    
-    return final_score
+    try:
+        # 2. Chạy Bếp Trưởng (Pipeline AI)
+        cleaned_data = process_cv_pipeline(temp_file_path)
+        
+        if not cleaned_data:
+            raise HTTPException(status_code=400, detail="Không tìm thấy vùng dữ liệu CV")
+            
+        end_time = time.time()
+        print(f"Bóc tách xong CV {file.filename} trong {round(end_time - start_time, 2)}s")
 
+        # 3. Trả cục JSON nháp về cho NestJS
+        return JSONResponse(content={
+            "success": True,
+            "data": cleaned_data,
+            "message": "Trích xuất AI thành công"
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    finally:
+        # 4. Dọn dẹp rác: Xóa file tạm sau khi làm xong
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+# Chạy server nếu gõ lệnh python main.py
 if __name__ == "__main__":
-    # --- CẤU HÌNH ĐẦU VÀO ---
-    test_image = r"D:\Project\DetectCVLasted\data\raw_cvs\2d187349-IT_56.png"
-    
-    jd_requirements = {
-        "position": "Frontend",
-        "level": "Junior",
-        "address": "chí minh",
-        "gpa": 4.0,
-        "skills": ["python", "c++", "react"]
-    }
-    
-    # Chạy hệ thống
-    process_cv_pipeline(test_image, jd_requirements)
+    import uvicorn
+    # Mở port 8000 lắng nghe NestJS
+    uvicorn.run(app, host="0.0.0.0", port=8000)
