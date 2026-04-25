@@ -68,6 +68,10 @@ async def extract_cv_api(
         end_time = time.time()
         print(f"Bóc tách & chấm điểm xong CV {file.filename} trong {round(end_time - start_time, 2)}s")
 
+        print("\n--- CHI TIẾT ĐIỂM PYTHON CHẤM ---")
+        print(json.dumps(result["score_details"], indent=4, ensure_ascii=False))
+        print("---------------------------------\n")
+
         # 4. Trả cục JSON về cho NestJS
         # Lưu ý: Cấu trúc này khớp với lúc NestJS gọi sang lấy data
         return JSONResponse(content={
