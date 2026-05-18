@@ -1,50 +1,59 @@
 import os
+import re
 import logging
 from paddleocr import PaddleOCR
 
-# Tắt log rác
 logging.getLogger("ppocr").setLevel(logging.WARNING)
 
-# Khởi tạo model
-ocr_model = PaddleOCR(lang='vi')
+ocr_model = PaddleOCR(lang='en')  # Đổi sang 'en' để nhận diện ký tự Latin/kỹ thuật chính xác hơn
+
+# Ngưỡng confidence tối thiểu - hạ xuống để không bỏ sót text địa chỉ/skill
+MIN_CONFIDENCE = 0.4
 
 def extract_text_from_images(image_paths):
     extracted_data = {}
-    
+
     for img_path in image_paths:
         if not os.path.exists(img_path):
             continue
-            
-        filename = os.path.basename(img_path)
-        label = os.path.splitext(filename)[0]
-        
+
+        label = os.path.splitext(os.path.basename(img_path))[0]
+
         try:
             result = ocr_model.predict(img_path)
         except Exception as e:
             print(f"Lỗi khi đọc ảnh {label}: {e}")
             continue
-            
+
         full_text = []
-        
+
         if result:
             if hasattr(result, '__iter__') and not isinstance(result, list):
                 result = list(result)
-                
+
             for res in result:
-                # KIỂM TRA ĐÚNG CẤU TRÚC PADDLEX (CÓ CHỮ 'S')
+                texts, scores = [], []
+
                 if isinstance(res, dict):
-                    if 'rec_texts' in res:
-                        full_text.extend(res['rec_texts'])
+                    texts = res.get('rec_texts', [])
+                    scores = res.get('rec_scores', [1.0] * len(texts))
                 elif hasattr(res, 'rec_texts'):
-                    full_text.extend(res.rec_texts)
+                    texts = res.rec_texts
+                    scores = getattr(res, 'rec_scores', [1.0] * len(texts))
                 elif hasattr(res, '__dict__') and 'rec_texts' in res.__dict__:
-                    full_text.extend(res.__dict__['rec_texts'])
-                # Cấu trúc fallback phòng hờ
+                    texts = res.__dict__['rec_texts']
+                    scores = res.__dict__.get('rec_scores', [1.0] * len(texts))
                 elif hasattr(res, 'res') and hasattr(res.res, 'rec_texts'):
-                    full_text.extend(res.res.rec_texts)
+                    texts = res.res.rec_texts
+                    scores = getattr(res.res, 'rec_scores', [1.0] * len(texts))
+
+                # Chỉ lấy text có confidence >= MIN_CONFIDENCE
+                for text, score in zip(texts, scores):
+                    if score >= MIN_CONFIDENCE and text.strip():
+                        full_text.append(text.strip())
 
         extracted_data[label] = " ".join(full_text)
-        
+
     return extracted_data
 
 if __name__ == "__main__":
