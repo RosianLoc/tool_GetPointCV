@@ -1,5 +1,22 @@
-opencv-python
-numpy
-ultralytics
-paddlepaddle
-paddleocr
+# ==========================================
+# THƯ VIỆN CỐT LÕI AI (YOLO & OCR)
+# ==========================================
+ultralytics==8.4.7
+paddlepaddle==3.2.2
+paddleocr==3.3.2
+opencv-python==4.11.0.86
+numpy==1.26.4
+
+# ==========================================
+# THƯ VIỆN XỬ LÝ CHỮ & SO KHỚP (MATCHER)
+# ==========================================
+thefuzz==0.22.1
+Levenshtein==0.27.3
+
+# ==========================================
+# THƯ VIỆN BACKEND API & XỬ LÝ PDF
+# ==========================================
+fastapi==0.123.8
+uvicorn==0.38.0
+python-multipart==0.0.20
+PyMuPDF==1.26.6
