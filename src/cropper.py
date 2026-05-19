@@ -3,26 +3,28 @@ import os
 import numpy as np
 
 def preprocess_for_ocr(img):
-    """
-    Tăng chất lượng ảnh crop trước khi đưa vào OCR:
-    1. Upscale 2x → chữ to hơn, OCR đọc chính xác hơn
-    2. Sharpen → làm nét cạnh chữ
-    3. Denoise → giảm nhiễu ảnh
-    """
-    # 1. Upscale 2x bằng INTER_CUBIC (giữ nét hơn INTER_LINEAR)
-    h, w = img.shape[:2]
-    img = cv2.resize(img, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
+    """ Tăng chất lượng ảnh crop trước khi đưa vào OCR """
+    # 1. Chuyển sang ảnh xám (Grayscale)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # 2. Upscale 2x để phóng to các chữ nhỏ
+    h, w = gray.shape[:2]
+    gray = cv2.resize(gray, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
 
-    # 2. Sharpen
+    # 3. Tăng độ tương phản cực đại bằng CLAHE (Tốt hơn Denoise mờ)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(gray)
+
+    # 4. Sharpen (Làm sắc nét viền chữ)
     kernel = np.array([[0, -1, 0],
                        [-1, 5, -1],
                        [0, -1, 0]])
-    img = cv2.filter2D(img, -1, kernel)
-
-    # 3. Denoise nhẹ để không mất nét chữ
-    img = cv2.fastNlMeansDenoisingColored(img, None, h=7, hColor=7,
-                                          templateWindowSize=7, searchWindowSize=21)
-    return img
+    final_img = cv2.filter2D(enhanced, -1, kernel)
+    
+    # 5. Thêm viền trắng (padding) 10px để OCR không bị lẹm viền
+    final_img = cv2.copyMakeBorder(final_img, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=[255, 255, 255])
+    
+    return final_img
 
 
 def crop_and_save_regions(image_path, detected_data,

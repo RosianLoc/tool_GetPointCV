@@ -1,2 +1,5 @@
-install paddlepaddle paddleocr
-install ultralytics
+opencv-python
+numpy
+ultralytics
+paddlepaddle
+paddleocr

@@ -6,64 +6,52 @@ import json
 # Key = lỗi OCR hay gặp, Value = từ đúng
 # ================================================================
 OCR_CORRECTIONS = {
-    # === LỖI TỪ ẢNH THỰC TẾC (thấy trong demo) ===
-    r'\bsyster\b': 'system',
-    r'\bsytem\b': 'system',       r'\bsysem\b': 'system',
-    r'\badministrato\b': 'administrator', r'\badministrat\b': 'administrator',
-    r'\badministrtor\b': 'administrator',
-    r'\blava\b': 'java',          r'\bjave\b': 'java',
-    r'\bjavascrint\b': 'javascript', r'\bjavascrit\b': 'javascript',
-    r'\bjavascritp\b': 'javascript',
-    r'\bqun\b': 'quan',           r'\bquan\b': 'quan',
-    r'\bh chi minh\b': 'ho chi minh', r'\bh\.chi minh\b': 'ho chi minh',
-    r'\bhcm\b': 'ho chi minh',    r'\btp\.hcm\b': 'ho chi minh',
-    r'\bha noi\b': 'ha noi',      r'\bhn\b': 'ha noi',
-    r'\bphuong\b': 'phuong',      r'\bduong\b': 'duong',
-
-    # === LỖI KÝ TỰ PHỔ BIẾN ===
-    # Software / Engineer
-    r'\bsowae\b': 'software',     r'\bsoftwar\b': 'software',
-    r'\bsofware\b': 'software',   r'\bsoftare\b': 'software',
-    r'\bsoftwaer\b': 'software',
-    r'\benginer\b': 'engineer',   r'\bengineer\b': 'engineer',
-    r'\bengineer\b': 'engineer',  r'\bengineer\b': 'engineer',
-    # Developer / Designer
-    r'\bdeveloer\b': 'developer', r'\bdevelper\b': 'developer',
-    r'\bdesigher\b': 'designer',  r'\bdesiger\b': 'designer',
-    # Frontend / Backend / Fullstack
-    r'\bfronend\b': 'frontend',   r'\bfrontnd\b': 'frontend',
-    r'\bbacknd\b': 'backend',     r'\bbackend\b': 'backend',
-    r'\bfullstck\b': 'fullstack', r'\bfullstac\b': 'fullstack',
-    # Languages
-    r'\bjavascrit\b': 'javascript', r'\bjavascript\b': 'javascript',
-    r'\btypescrit\b': 'typescript', r'\btypescript\b': 'typescript',
-    r'\bpythn\b': 'python',       r'\bpytohn\b': 'python',
-    r'\bphp\b': 'php',
-    # Frameworks
-    r'\breact\.js\b': 'reactjs',  r'\breactis\b': 'reactjs',
-    r'\bnode\.js\b': 'nodejs',    r'\bnodeis\b': 'nodejs',
-    r'\bvue\.js\b': 'vuejs',      r'\bvueis\b': 'vuejs',
-    r'\bangulr\b': 'angular',     r'\bnestis\b': 'nestjs',
-    r'\blarave\b': 'laravel',     r'\bdjang\b': 'django',
-    r'\bspringboot\b': 'spring boot',
-    # DevOps / Cloud
-    r'\bcl/cd\b': 'ci/cd',        r'\bc1/cd\b': 'ci/cd',
-    r'\bci\\cd\b': 'ci/cd',       r'\bcicd\b': 'ci/cd',
-    r'\bdockr\b': 'docker',       r'\bkuberntes\b': 'kubernetes',
-    r'\bk8s\b': 'kubernetes',     r'\bjenkin\b': 'jenkins',
-    r'\bterrafom\b': 'terraform',
-    # DB
-    r'\bmongdb\b': 'mongodb',     r'\bpostgres\b': 'postgresql',
-    r'\bmysq\b': 'mysql',         r'\bredis\b': 'redis',
-    # Level
-    r'\bsenoir\b': 'senior',      r'\bsenor\b': 'senior',
-    r'\bjunoir\b': 'junior',      r'\bjunor\b': 'junior',
-    r'\bfreshr\b': 'fresher',     r'\bfreshe\b': 'fresher',
-    r'\bintrn\b': 'intern',       r'\bmidl\b': 'middle',
-    # Tools
-    r'\bgitub\b': 'github',       r'\bgitab\b': 'gitlab',
-    r'\bfigm\b': 'figma',         r'\blinx\b': 'linux',
-    r'\bwindws\b': 'windows',     r'\bpowershel\b': 'powershell',
+    # Lỗi vị trí, cấp bậc
+    r'\bsyster\b': 'system', r'\bsytem\b': 'system', r'\bsysem\b': 'system',
+    r'\badministrato\b': 'administrator', r'\badministrat\b': 'administrator', r'\badministrtor\b': 'administrator',
+    r'\benginer\b': 'engineer', r'\bengineer\b': 'engineer', r'\bsEngineer\b': 'Engineer',
+    r'\bdeveloer\b': 'developer', r'\bdevelper\b': 'developer', r'\bUevelope\b': 'Developer', r'\bDevelope\b': 'Developer',
+    r'\bdesigher\b': 'designer', r'\bfronend\b': 'frontend', r'\bfrontnd\b': 'frontend', r'\bbacknd\b': 'backend', r'\bfullstck\b': 'fullstack',
+    r'\bsenoir\b': 'senior', r'\bjunoir\b': 'junior', r'\bSunior\b': 'Junior', r'\bsenor\b': 'senior', r'\bjunor\b': 'junior',
+    r'\bfreshr\b': 'fresher', r'\bfreshe\b': 'fresher', r'\bintrn\b': 'intern', r'\bIntem\b': 'Intern', r'\bInter\b': 'Intern', r'\bnter\b': 'Intern', r'\bmidl\b': 'middle',
+    r'\bAl Engineer\b': 'AI Engineer',
+    
+    # Lỗi ngôn ngữ / công nghệ
+    r'\blava\b': 'java', r'\bjave\b': 'java',
+    r'\bjavascrint\b': 'javascript', r'\bjavascrit\b': 'javascript', r'\bjavascritp\b': 'javascript',
+    r'\btypescrit\b': 'typescript', r'\bpythn\b': 'python', r'\bpytohn\b': 'python',
+    r'\breact\.js\b': 'reactjs', r'\breactis\b': 'reactjs', 
+    r'\bnode\.js\b': 'nodejs', r'\bnodeis\b': 'nodejs', r'\bvue\.js\b': 'vuejs', r'\bangulr\b': 'angular', r'\bnestis\b': 'nestjs',
+    r'\blarave\b': 'laravel', r'\bspringboot\b': 'spring boot', r'\bdjang\b': 'django',
+    r'\bcl/cd\b': 'ci/cd', r'\bc1/cd\b': 'ci/cd', r'\bcicd\b': 'ci/cd', r'\bci\\cd\b': 'ci/cd',
+    r'\bdockr\b': 'docker', r'\bkuberntes\b': 'kubernetes', r'\bk8s\b': 'kubernetes', r'\bterrafom\b': 'terraform', r'\bjenkin\b': 'jenkins',
+    r'\bmongdb\b': 'mongodb', r'\bpostgres\b': 'postgresql', r'\bmysq\b': 'mysql', r'\bredis\b': 'redis',
+    r'\bgitub\b': 'github', r'\bgitab\b': 'gitlab', r'\bfigm\b': 'figma', r'\blinx\b': 'linux', r'\bwindws\b': 'windows', r'\bpowershel\b': 'powershell',
+    r'\bsowae\b': 'software', r'\bsoftwar\b': 'software', r'\bsofware\b': 'software', r'\bsoftare\b': 'software', r'\bsoftwaer\b': 'software',
+    r'\bsCSs\b': 'SCSS', r'\bSCSs\b': 'SCSS', r'\bHTMl\b': 'HTML', r'\bHTMl5\b': 'HTML5',
+    r'\bVisud Studio\b': 'Visual Studio', r'\bUnredlEngine\b': 'Unreal Engine',
+    
+    # Lỗi Kỹ năng mềm & Các trường khác
+    r'\bKy năng\b': 'Kỹ năng', r'\bK năng\b': 'Kỹ năng', r'\bK näng\b': 'Kỹ năng', r'\bKý näng\b': 'Kỹ năng', r'\bKy näng\b': 'Kỹ năng',
+    r'\bKnăng mm\b': 'Kỹ năng mềm', r'\bC8ng cu\b': 'Công cụ', r'\bcơ bàn\b': 'cơ bản',
+    r'\bLàm vic nhóm\b': 'Làm việc nhóm', r'\blānh đgo nhóm\b': 'Lãnh đạo nhóm', r'\bqun lý thi gian\b': 'Quản lý thời gian', r'\bquan lý thi gian\b': 'Quản lý thời gian',
+    r'\bChuyanngann\b': 'Chuyên ngành', r'\bChuyenngann\b': 'Chuyên ngành', r'\bhuyenngann\b': 'Chuyên ngành',
+    r'\bD án tótnahi8r\b': 'Đồ án tốt nghiệp', r'\bDi án tót nabi8\b': 'Đồ án tốt nghiệp',
+    
+    # Lỗi Địa chỉ, Thành phố, Quốc gia
+    r'\bThành ph H ChrMinh\b': 'Thành phố Hồ Chí Minh', r'\bThành ph H Ch Minh\b': 'Thành phố Hồ Chí Minh', r'\bThnh ph H Chl Minh\b': 'Thành phố Hồ Chí Minh',
+    r'\bThành phó H ChrMinh\b': 'Thành phố Hồ Chí Minh', r'\bThnh phó H ChrMinh\b': 'Thành phố Hồ Chí Minh', r'\bThành phH Chl Minh\b': 'Thành phố Hồ Chí Minh',
+    r'\bThnh ph H Chr Minh\b': 'Thành phố Hồ Chí Minh', r'\bthành ph H Chl Minh\b': 'Thành phố Hồ Chí Minh', r'\bThnh ph H\b': 'Thành phố Hồ', r'\bThành phó H Ch\(Minh\b': 'Thành phố Hồ Chí Minh',
+    r'\bH8 Chí Minh\b': 'Hồ Chí Minh', r'\bH ChrMinh\b': 'Hồ Chí Minh', r'\bH Chr Minh\b': 'Hồ Chí Minh', r'\bH Chl Minh\b': 'Hồ Chí Minh',
+    r'\bVit Nam\b': 'Việt Nam', r'\bViBt Nam\b': 'Việt Nam', r'\bViBt Nom\b': 'Việt Nam', r'\bViêt Nam\b': 'Việt Nam', r'\bVi8t Nam\b': 'Việt Nam',
+    r'\bPhưng\b': 'Phường', r'\bPhưòng\b': 'Phường', r'\bQun\b': 'Quận', r'\bQuġn\b': 'Quận', r'\bquiw Qun\b': 'Quận',
+    r'\bTn Phú\b': 'Tân Phú', r'\bTân Ph\b': 'Tân Phú', r'\bTn Phù\b': 'Tân Phú', r'\bTn Binh\b': 'Tân Bình', r'\bPh Nhun\b': 'Phú Nhuận', r'\bPhú Nhun\b': 'Phú Nhuận',
+    r'\bPh Thαnh\b': 'Phú Thạnh', r'\bHa Thơnh\b': 'Hòa Thạnh', r'\bHm\b': 'Hẻm',
+    r'\bqun\b': 'quan', r'\bquan\b': 'quan', r'\bh chi minh\b': 'ho chi minh', r'\bh\.chi minh\b': 'ho chi minh', r'\bhcm\b': 'ho chi minh', r'\btp\.hcm\b': 'ho chi minh',
+    r'\bha noi\b': 'ha noi', r'\bhn\b': 'ha noi', r'\bphuong\b': 'phuong', r'\bduong\b': 'duong',
+    r'\bSeniorCybersecurity\b': 'Senior Cybersecurity', r'\bKhu Phó\b': 'Khu Phố', r'\bCách Mang\b': 'Cách Mạng',
+    r'\bChl Minh\b': 'Chí Minh', r'\bquiw\b': '', r'\bHin Vương\b': 'Hiền Vương',
+    r'\bEUUDDUUBN\b': '',
 }
 
 def correct_ocr_text(text: str) -> str:
@@ -81,6 +69,7 @@ ADDRESS_KEYWORDS = [
     'hà nội', 'ha noi', 'hcm', 'tp.hcm', 'thành phố', 'thanh pho',
     'phường', 'phuong', 'đường', 'duong', 'tỉnh', 'district', 'city', 'street',
     'quận 1', 'quận 2', 'quận 3', 'quận 4', 'quận 5', 'quận 6', 'quận 7',
+    'việt nam', 'viet nam', 'vi8t nam', 'thanh phó', 'hó chl minh', 'hó chi minh'
 ]
 POSITION_KEYWORDS = [
     'engineer', 'developer', 'designer', 'manager', 'analyst',
@@ -105,11 +94,12 @@ def _has_level(text):
 def clean_cv_data(raw_data):
     cleaned_data = {}
 
-    raw_level    = raw_data.get('level', '').strip()
-    raw_position = raw_data.get('position', '').strip()
-    raw_address  = raw_data.get('address', '').strip()
+    # BƯỚC 1: Chuẩn hóa chữ bị OCR đọc sai TRƯỚC KHI lọc
+    raw_level    = correct_ocr_text(raw_data.get('level', '').strip())
+    raw_position = correct_ocr_text(raw_data.get('position', '').strip())
+    raw_address  = correct_ocr_text(raw_data.get('address', '').strip())
 
-    # --- BƯỚC 1: TIN TƯỜNG YOLO TRƯỚC ---
+    # --- BƯỚC 2: TIN TƯỜNG YOLO TRƯỚC ---
     # Nếu YOLO gán đúng nhãn thì dùng thẳng, không cần pool
     final_level    = raw_level    if _has_level(raw_level)    else ''
     final_address  = raw_address  if _has_address(raw_address) else ''
@@ -146,7 +136,25 @@ def clean_cv_data(raw_data):
             # Không nhận diện được → gán vào position nếu chưa có
             if not final_position: final_position = text
 
-    cleaned_data['level']    = final_level
+    # Lọc lấy từ khóa chính xác cho Level và xóa nó khỏi Position nếu bị trùng
+    extracted_level = final_level
+    found_lvl_word = None
+    
+    search_text = final_level if final_level else final_position
+    
+    if search_text:
+        for lvl in KNOWN_LEVELS:
+            if re.search(rf'\b{lvl}\b', search_text, re.IGNORECASE):
+                found_lvl_word = lvl
+                extracted_level = lvl.capitalize()
+                if extracted_level == 'Mid': extracted_level = 'Middle'
+                break
+                
+    if found_lvl_word:
+        final_position = re.sub(rf'\b{found_lvl_word}\b', '', final_position, flags=re.IGNORECASE).strip()
+        final_position = re.sub(r'^[-,\s]+', '', final_position)
+                
+    cleaned_data['level']    = extracted_level
     cleaned_data['position'] = final_position
     cleaned_data['address']  = final_address
 
@@ -157,10 +165,6 @@ def clean_cv_data(raw_data):
 
     raw_skill = raw_data.get('skill', '')
     cleaned_data['skill'] = correct_ocr_text(' '.join(raw_skill.split()))
-
-    cleaned_data['position'] = correct_ocr_text(cleaned_data['position'])
-    cleaned_data['level']    = correct_ocr_text(cleaned_data['level'])
-    cleaned_data['address']  = correct_ocr_text(cleaned_data['address'])
 
     return cleaned_data
 

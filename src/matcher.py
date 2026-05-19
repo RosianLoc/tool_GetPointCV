@@ -99,12 +99,25 @@ def calculate_cv_score(cv_data, jd_criteria):
     else:
         jd_skills_raw = raw_jd_skills if raw_jd_skills else []
         
-    jd_skills = [normalize_text(s) for s in jd_skills_raw if len(s) > 1]
+    jd_skills = [normalize_text(s) for s in jd_skills_raw if len(s) >= 1]
 
     if not jd_skills:
         details["skill"] = {"jd_value": [], "cv_value": cv_skill_text, "score": 0, "note": "JD khong yeu cau, bo qua"}
     else:
-        matched = [s for s in jd_skills if fuzz.partial_ratio(s, cv_skill_text) >= THRESHOLDS["skill"]]
+        matched = []
+        # Chuyển các dấu phẩy, gạch chéo thành khoảng trắng để dò từ độc lập
+        padded_cv = f" {re.sub(r'[,;/|]', ' ', cv_skill_text)} "
+        
+        for s in jd_skills:
+            # Phân tách logic: Các skill quá ngắn (như C, C++, C#, Go) dễ bị fuzzy match nhận diện sai (C# thành C)
+            if len(s) <= 3:
+                if f" {s} " in padded_cv:  # Phải match chính xác 100%
+                    matched.append(s)
+            else:
+                # Skill dài (Python, ReactJS, Machine Learning) dùng partial_ratio để có thể match 'React' với 'ReactJS'
+                if fuzz.partial_ratio(s, cv_skill_text) >= THRESHOLDS["skill"]:
+                    matched.append(s)
+
         score = round((len(matched) / len(jd_skills)) * 30, 2)
         details["skill"] = {
             "jd_value": jd_skills,

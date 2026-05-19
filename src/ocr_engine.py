@@ -5,7 +5,7 @@ from paddleocr import PaddleOCR
 
 logging.getLogger("ppocr").setLevel(logging.WARNING)
 
-ocr_model = PaddleOCR(lang='en')  # Đổi sang 'en' để nhận diện ký tự Latin/kỹ thuật chính xác hơn
+ocr_model = PaddleOCR(lang='vi')  # Đổi sang 'vi' để nhận diện ký tự Latin/kỹ thuật chính xác hơn
 
 # Ngưỡng confidence tối thiểu - hạ xuống để không bỏ sót text địa chỉ/skill
 MIN_CONFIDENCE = 0.4
