@@ -153,6 +153,13 @@ def clean_cv_data(raw_data):
     if found_lvl_word:
         final_position = re.sub(rf'\b{found_lvl_word}\b', '', final_position, flags=re.IGNORECASE).strip()
         final_position = re.sub(r'^[-,\s]+', '', final_position)
+        
+        # Nếu final_level có chứa text khác ngoài chữ level (ví dụ YOLO gộp nhầm Intern và Position)
+        # Thì sau khi lấy được 'Intern', ta ném phần chữ còn lại sang cho position.
+        remaining_level_text = re.sub(rf'\b{found_lvl_word}\b', '', final_level, flags=re.IGNORECASE).strip()
+        remaining_level_text = re.sub(r'^[-,\s]+', '', remaining_level_text)
+        if remaining_level_text and remaining_level_text.lower() not in final_position.lower():
+            final_position = (final_position + " " + remaining_level_text).strip()
                 
     cleaned_data['level']    = extracted_level
     cleaned_data['position'] = final_position

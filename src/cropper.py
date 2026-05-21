@@ -41,8 +41,13 @@ def crop_and_save_regions(image_path, detected_data,
     img_h, img_w = img.shape[:2]
     saved_paths = []
 
+    label_counts = {}
+
     for region in detected_data:
-        label = region['label']
+        base_label = region['label']
+        label_counts[base_label] = label_counts.get(base_label, 0) + 1
+        label = f"{base_label}_{label_counts[base_label]}"
+        
         x1, y1, x2, y2 = region['box']
 
         # Thêm padding 8px quanh vùng crop để tránh cắt mất chữ ở rìm

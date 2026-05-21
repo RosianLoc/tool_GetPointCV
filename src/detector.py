@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-def get_cv_boxes(image_path, model_path=r"D:\Project\DetectCVLasted\runs5\weights\best.pt"):
+def get_cv_boxes(image_path, model_path=r"D:\Project\DetectCVLasted\runs8\weights\best.pt"):
     """
     Load model YOLO và trả về danh sách tọa độ, nhãn của các vùng trên CV.
     """

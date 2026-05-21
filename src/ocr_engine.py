@@ -18,6 +18,8 @@ def extract_text_from_images(image_paths):
             continue
 
         label = os.path.splitext(os.path.basename(img_path))[0]
+        # Lấy base_label, ví dụ: level_1 -> level, skill_2 -> skill
+        base_label = label.rsplit('_', 1)[0] if '_' in label else label
 
         try:
             result = ocr_model.predict(img_path)
@@ -52,7 +54,12 @@ def extract_text_from_images(image_paths):
                     if score >= MIN_CONFIDENCE and text.strip():
                         full_text.append(text.strip())
 
-        extracted_data[label] = " ".join(full_text)
+        new_text = " ".join(full_text).strip()
+        if base_label in extracted_data:
+            if new_text:
+                extracted_data[base_label] += " " + new_text
+        else:
+            extracted_data[base_label] = new_text
 
     return extracted_data
 

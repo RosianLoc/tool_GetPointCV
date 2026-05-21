@@ -1,0 +1,29 @@
+{
+  "categories": [
+    {
+      "id": 0,
+      "name": "address"
+    },
+    {
+      "id": 1,
+      "name": "gpa"
+    },
+    {
+      "id": 2,
+      "name": "level"
+    },
+    {
+      "id": 3,
+      "name": "position"
+    },
+    {
+      "id": 4,
+      "name": "skill"
+    }
+  ],
+  "info": {
+    "year": 2026,
+    "version": "1.0",
+    "contributor": "Label Studio"
+  }
+}

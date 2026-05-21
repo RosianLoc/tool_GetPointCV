@@ -4,7 +4,7 @@ import numpy as np
 from ultralytics import YOLO
 
 # ================= CẤU HÌNH ĐƯỜNG DẪN =================
-MODEL_PATH = r"D:\Project\DetectCVLasted\runs7\weights\best.pt"           # Đường dẫn model YOLO xịn nhất
+MODEL_PATH = r"D:\Project\DetectCVLasted\runs8\weights\best.pt"           # Đường dẫn model YOLO xịn nhất
 TEST_DIR = r"data\raw_cvs"                      # Thư mục chứa 30 ảnh CV test
 OUTPUT_CROP_DIR = r"data\cropped_images"        # Thư mục lưu ảnh đã cắt
 # ======================================================
@@ -65,9 +65,14 @@ def crop_and_save_regions(image_path, detected_data, base_output_dir):
 
     img_h, img_w = img.shape[:2]
     saved_paths = []
+    
+    label_counts = {}
 
     for region in detected_data:
-        label = region['label']
+        base_label = region['label']
+        label_counts[base_label] = label_counts.get(base_label, 0) + 1
+        label = f"{base_label}_{label_counts[base_label]}"
+        
         x1, y1, x2, y2 = region['box']
 
         # Thêm padding 8px quanh vùng crop

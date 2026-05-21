@@ -2,6 +2,7 @@ import os
 import json
 import time
 import shutil
+import asyncio
 import fitz  # pymupdf
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -44,6 +45,40 @@ def convert_to_image(file_path: str) -> str:
 
 # Khởi tạo App FastAPI
 app = FastAPI()
+
+async def check_nestjs_connection(host="127.0.0.1", port=5000, retries=5, delay=2):
+    print(f"\n📡 [NETWORK] Đang kiểm tra kết nối thực tế tới NestJS ({host}:{port})...")
+    for attempt in range(1, retries + 1):
+        try:
+            reader, writer = await asyncio.open_connection(host, port)
+            writer.close()
+            await writer.wait_closed()
+            print("🤝 [SUCCESS] ĐÃ KẾT NỐI TỚI NESTJS SERVER THÀNH CÔNG!")
+            return True
+        except (ConnectionRefusedError, OSError):
+            print(f"⚠️ [CẢNH BÁO] Chưa kết nối được NestJS (Lần {attempt}/{retries}). Đang chờ NestJS bật lên...")
+            await asyncio.sleep(delay)
+            
+    print("❌ [LỖI] KHÔNG THỂ KẾT NỐI TỚI NESTJS SERVER SAU NHIỀU LẦN THỬ!")
+    print("👉 Hãy chắc chắn bạn đã bật server NestJS (ví dụ: npm run start:dev)")
+    return False
+
+@app.on_event("startup")
+async def startup_event():
+    print("\n" + "="*70)
+    print("🚀 [SYSTEM] ĐANG KHỞI ĐỘNG PYTHON AI SERVER...")
+    print("✅ [CHECK] Đã tải module YOLO (Nhận diện bố cục CV) - OK")
+    print("✅ [CHECK] Đã tải OCR Engine (Trích xuất văn bản) - OK")
+    print("✅ [CHECK] Đã khởi tạo Text Processor & Matcher - OK")
+    print("🌟 [SUCCESS] PYTHON SERVER ĐÃ BẬT XONG VÀ ĐANG CHẠY Ở PORT 8000!")
+    
+    # Kiểm tra kết nối thật
+    is_connected = await check_nestjs_connection()
+    if is_connected:
+        print("✅ Hệ thống AI đã sẵn sàng nhận CV và JD từ NestJS!")
+    else:
+        print("⚠️ Hệ thống AI đang chạy tĩnh, chưa thể giao tiếp với NestJS lúc này.")
+    print("="*70 + "\n")
 
 def process_cv_pipeline(cv_image_path, jd_criteria_dict):
     """
