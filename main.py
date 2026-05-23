@@ -84,6 +84,58 @@ async def startup_event():
         print("⚠️ Hệ thống AI đang chạy tĩnh, chưa thể giao tiếp với NestJS lúc này.")
     print("="*70 + "\n")
 
+def _fallback_find_gpa_from_image(image_path):
+    """
+    Fallback: Khi YOLO không detect được box GPA,
+    OCR toàn bộ ảnh rồi tìm GPA bằng regex.
+    Hỗ trợ cả format tiếng Việt và tiếng Anh.
+    """
+    import re
+    try:
+        from src.ocr_engine import ocr_model
+        result = ocr_model.predict(image_path)
+        
+        full_text = []
+        if result:
+            for res in (list(result) if not isinstance(result, list) else result):
+                texts = []
+                if isinstance(res, dict):
+                    texts = res.get('rec_texts', [])
+                elif hasattr(res, 'rec_texts'):
+                    texts = res.rec_texts
+                elif hasattr(res, '__dict__') and 'rec_texts' in res.__dict__:
+                    texts = res.__dict__['rec_texts']
+                elif hasattr(res, 'res') and hasattr(res.res, 'rec_texts'):
+                    texts = res.res.rec_texts
+                full_text.extend([t.strip() for t in texts if t.strip()])
+        
+        all_text = ' '.join(full_text)
+        print(f"🔍 [FALLBACK GPA] OCR toàn ảnh: {len(all_text)} ký tự")
+        
+        # Tìm GPA bằng nhiều pattern (hỗ trợ cả EN và VN)
+        gpa_patterns = [
+            r'GPA\s*[:\-]?\s*(\d+[.,]\d+)\s*/\s*(?:4\.0|10)',
+            r'GPA\s*[:\-]?\s*(\d+[.,]\d+)',
+            r'CGPA\s*[:\-]?\s*(\d+[.,]\d+)',
+            r'(\d+[.,]\d+)\s*/\s*4\.0',
+            r'Grade\s*[:\-]?\s*(\d+[.,]\d+)',
+        ]
+        
+        for pattern in gpa_patterns:
+            match = re.search(pattern, all_text, re.IGNORECASE)
+            if match:
+                gpa_val = match.group(1).replace(',', '.')
+                print(f"✅ [FALLBACK GPA] Tìm thấy GPA = {gpa_val}")
+                return gpa_val
+        
+        print("❌ [FALLBACK GPA] Không tìm thấy GPA trong toàn bộ ảnh")
+        return '0'
+        
+    except Exception as e:
+        print(f"❌ [FALLBACK GPA] Lỗi khi OCR toàn ảnh: {e}")
+        return '0'
+
+
 def process_cv_pipeline(cv_image_path, jd_criteria_dict):
     """
     Chạy TOÀN BỘ quy trình: YOLO -> Cắt ảnh -> OCR -> Làm sạch -> CHẤM ĐIỂM
@@ -93,10 +145,21 @@ def process_cv_pipeline(cv_image_path, jd_criteria_dict):
     if not cv_regions:
         return None
 
+    # Kiểm tra xem YOLO có detect được GPA không
+    detected_labels = [r['label'] for r in cv_regions]
+    has_gpa_box = 'gpa' in detected_labels
+
     cropped_image_paths = crop_and_save_regions(cv_image_path, cv_regions)
     
     # Bước 3 & 4: Đọc chữ và Làm sạch
     raw_ocr_data = extract_text_from_images(cropped_image_paths)
+
+    # FALLBACK: Nếu YOLO không detect được GPA → OCR toàn ảnh để tìm
+    if not has_gpa_box:
+        print("🔄 [FALLBACK] YOLO không detect GPA, đang OCR toàn ảnh tìm GPA...")
+        fallback_gpa = _fallback_find_gpa_from_image(cv_image_path)
+        if fallback_gpa != '0':
+            raw_ocr_data['gpa'] = fallback_gpa
 
     print("\n--- [RAW OCR] DỮ LIỆU TRƯỚC KHI CLEAN ---")
     for k, v in raw_ocr_data.items():

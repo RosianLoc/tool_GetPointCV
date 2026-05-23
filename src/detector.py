@@ -8,9 +8,11 @@ def get_cv_boxes(image_path, model_path=r"D:\Project\DetectCVLasted\runs8\weight
     model = YOLO(model_path)
     
     # 2. Predict
+    # Dùng conf thấp hơn (0.40) để không bỏ sót GPA trên CV tiếng Anh
+    # (YOLO train trên CV tiếng Việt nên confidence cho CV EN thường thấp hơn)
     results = model(
         image_path,
-        conf=0.55,
+        conf=0.40,
         imgsz=1280,
         iou=0.5,
         verbose=False # Tắt bớt log rác trên terminal
@@ -38,7 +40,13 @@ def get_cv_boxes(image_path, model_path=r"D:\Project\DetectCVLasted\runs8\weight
                 "box": [x1, y1, x2, y2],
                 "confidence": conf
             })
-            
+    
+    # Kiểm tra xem có đủ 5 box không, cảnh báo nếu thiếu GPA
+    detected_labels = [d['label'] for d in detected_data]
+    if 'gpa' not in detected_labels:
+        print(f"⚠️ [YOLO] KHÔNG detect được box GPA! (chỉ tìm thấy: {detected_labels})")
+        print(f"⚠️ [YOLO] GPA sẽ được fallback tìm bằng OCR toàn ảnh.")
+    
     return detected_data
 
 # --- Phần này chỉ chạy khi bạn test trực tiếp file detector.py ---

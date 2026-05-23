@@ -14,7 +14,7 @@ from src.cropper import crop_and_save_regions
 def get_cv_boxes_local(image_path, model):
     """ Load model YOLO và trả về danh sách tọa độ, nhãn """
     results = model(
-        image_path, conf=0.55, imgsz=1280, iou=0.5,
+        image_path, conf=0.40, imgsz=1280, iou=0.5,
         verbose=False, save=True # Bật save=True để YOLO tự lưu ảnh vẽ khung vào runs/detect/predict
     )
     

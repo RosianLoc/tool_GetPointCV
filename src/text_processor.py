@@ -310,6 +310,66 @@ def clean_cv_data(raw_data):
     # Xóa bullet points • thừa
     cleaned_skill = re.sub(r'[•·]', ' ', cleaned_skill)
     cleaned_skill = re.sub(r'\s{2,}', ' ', cleaned_skill).strip()
+
+    # --- BƯỚC 3b: FALLBACK GPA ---
+    # Khi YOLO gộp vùng Education/GPA vào box skill (hay gặp ở CV tiếng Anh),
+    # GPA text bị chôn trong skill. Cần scan skill (và các field khác) để cứu GPA.
+    if cleaned_data['gpa'] == '0':
+        # Các pattern GPA phổ biến (hỗ trợ cả EN và VN)
+        gpa_patterns = [
+            r'GPA\s*[:\-]?\s*(\d+[.,]\d+)\s*/\s*(?:4(?:\.0)?|10)',  # GPA:3.8/4, GPA: 3.8/4.0
+            r'CGPA\s*[:\-]?\s*(\d+[.,]\d+)\s*/\s*(?:4(?:\.0)?|10)',  # CGPA:3.8/4
+            r'GPA\s*[:\-]?\s*(\d+[.,]\d+)',                          # GPA:3.8, GPA: 3.8
+            r'CGPA\s*[:\-]?\s*(\d+[.,]\d+)',                         # CGPA:3.8
+            r'(\d+[.,]\d+)\s*/\s*4(?:\.0)?',                         # 3.8/4, 3.8/4.0
+        ]
+        
+        # Scan tất cả các field để tìm GPA bị lạc
+        all_texts_to_scan = [
+            ('skill', cleaned_skill),
+            ('address', final_address),
+            ('position', final_position),
+            ('level', extracted_level),
+        ]
+        
+        for field_name, field_text in all_texts_to_scan:
+            if not field_text:
+                continue
+            for pattern in gpa_patterns:
+                match = re.search(pattern, field_text, re.IGNORECASE)
+                if match:
+                    gpa_val = match.group(1).replace(',', '.')
+                    # Validate: GPA phải trong khoảng hợp lệ (0.0 - 10.0)
+                    try:
+                        gpa_float = float(gpa_val)
+                    except ValueError:
+                        continue
+                    if 0.0 < gpa_float <= 10.0:
+                        cleaned_data['gpa'] = gpa_val
+                        print(f"[FALLBACK GPA] Tim thay GPA={gpa_val} trong field '{field_name}'")
+                        
+                        # Nếu GPA nằm trong skill → xóa phần education/GPA khỏi skill
+                        if field_name == 'skill':
+                            # Xóa đoạn GPA (vd: "GPA:3.8/4", "GPA: 3.8/4.0")
+                            cleaned_skill = re.sub(r'C?GPA\s*[:\-]?\s*\d+[.,]\d+\s*(?:/\s*(?:4(?:\.0)?|10))?\s*', '', cleaned_skill, flags=re.IGNORECASE)
+                            # Xóa thông tin education hay bị gộp vào skill (university, major, ...)
+                            education_noise_patterns = [
+                                r'Major\s*:\s*\S+(?:\s+\S+){0,3}',          # Major:Information Technology
+                                r'(?:Ho Chi Minh City|Ha Noi|Da Nang)?\s*(?:University|College|Institute)\s+(?:of\s+)?\S+(?:\s+\S+){0,5}(?:\(.*?\))?',  # Ho Chi Minh City University of Technology (HCMUT)
+                                r'(?:Bachelor|Master|B\.?S\.?|M\.?S\.?)\s+(?:of\s+)?\S+(?:\s+\S+){0,4}',  # Bachelor of Science in CS
+                                r'\b\d{4}\s*[-–]\s*(?:\d{4}|Present|Nay)\b', # 2020 - Present, 2020 - 2024
+                                r'\b\d{4}\s+Present\b',                      # 2020 Present
+                                r'(?:Education|Hoc van|EDUCATION)\s*:?\s*',   # Section header Education
+                            ]
+                            for noise_pat in education_noise_patterns:
+                                cleaned_skill = re.sub(noise_pat, '', cleaned_skill, flags=re.IGNORECASE)
+                            # Dọn rác sau khi xóa
+                            cleaned_skill = re.sub(r'\s{2,}', ' ', cleaned_skill).strip()
+                            cleaned_skill = re.sub(r'^[\s,.\-;|]+|[\s,.\-;|]+$', '', cleaned_skill)
+                        break
+            if cleaned_data['gpa'] != '0':
+                break
+
     cleaned_data['skill'] = cleaned_skill
 
     return cleaned_data
