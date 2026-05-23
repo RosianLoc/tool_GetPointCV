@@ -13,6 +13,7 @@ from src.cropper import crop_and_save_regions
 from src.ocr_engine import extract_text_from_images
 from src.text_processor import clean_cv_data
 from src.matcher import calculate_cv_score
+from src.pdf_extractor import extract_cv_from_pdf
 
 
 def convert_to_image(file_path: str) -> str:
@@ -30,12 +31,15 @@ def convert_to_image(file_path: str) -> str:
     if ext == '.pdf':
         doc = fitz.open(file_path)
         page = doc[0]  # Lấy trang đầu tiên
-        # DPI 200 đủ để YOLO detect tốt, không quá nặng
-        mat = fitz.Matrix(200 / 72, 200 / 72)
-        pix = page.get_pixmap(matrix=mat)
+        # DPI 300 để ảnh render ra có kích thước gần với ảnh screenshot (training data)
+        dpi = 300
+        mat = fitz.Matrix(dpi / 72, dpi / 72)
+        pix = page.get_pixmap(matrix=mat, alpha=False)  # alpha=False -> RGB thuần, không có kênh trong suốt
         out_path = file_path + '_page0.png'
         pix.save(out_path)
         doc.close()
+        
+        print(f"📄 [PDF->IMG] Đã convert PDF sang ảnh: {pix.width}x{pix.height}px @ {dpi} DPI")
         return out_path
 
     raise HTTPException(
@@ -116,6 +120,39 @@ def process_cv_pipeline(cv_image_path, jd_criteria_dict):
         "score_details": final_score
     }
 
+def process_pdf_pipeline(pdf_path, jd_criteria_dict):
+    """
+    Pipeline dành riêng cho PDF: Đọc text trực tiếp từ PDF (không cần YOLO).
+    Text trong PDF là kỹ thuật số nên không bị lỗi OCR.
+    """
+    # Bước 1: Trích xuất text trực tiếp từ PDF
+    raw_pdf_data = extract_cv_from_pdf(pdf_path)
+    
+    if not raw_pdf_data:
+        print("⚠️ [PDF] Không trích xuất được text từ PDF, thử fallback sang YOLO...")
+        return None
+    
+    print("\n--- [PDF RAW] DỮ LIỆU TRƯỚC KHI CLEAN ---")
+    for k, v in raw_pdf_data.items():
+        print(f"  [{k}] -> '{v[:80]}...'" if len(str(v)) > 80 else f"  [{k}] -> '{v}'")
+    print("--------------------------------------\n")
+    
+    # Bước 2: Làm sạch (dùng chung clean_cv_data)
+    cleaned_cv = clean_cv_data(raw_pdf_data)
+    
+    print("--- [PDF CLEANED] DỮ LIỆU SAU KHI CLEAN ---")
+    for k, v in cleaned_cv.items():
+        print(f"  [{k}] -> '{v}'")
+    print("---------------------------------------\n")
+    
+    # Bước 3: Chấm điểm
+    final_score = calculate_cv_score(cleaned_cv, jd_criteria_dict)
+    
+    return {
+        "extracted_data": cleaned_cv,
+        "score_details": final_score
+    }
+
 # ==========================================
 # MỞ API CHO NESTJS GỌI VÀO
 # ==========================================
@@ -143,11 +180,24 @@ async def extract_cv_api(
             print(f"  [{k}] -> {v}")
         print("=====================================================\n")
 
-        # 2b. Convert PDF/DOC sang ảnh nếu cần
-        converted_image_path = convert_to_image(temp_file_path)
-
-        # 3. Chạy Bếp Trưởng (Pipeline AI + Chấm điểm)
-        result = process_cv_pipeline(converted_image_path, jd_dict)
+        # 2b. Chọn pipeline phù hợp theo loại file
+        file_ext = os.path.splitext(temp_file_path)[1].lower()
+        
+        if file_ext == '.pdf':
+            # PDF → Đọc text trực tiếp (bypass YOLO hoàn toàn)
+            print("📄 [PIPELINE] Sử dụng PDF Text Extractor (Bypass YOLO)")
+            result = process_pdf_pipeline(temp_file_path, jd_dict)
+            
+            # Fallback: Nếu PDF không có text (PDF scan/ảnh) → convert sang ảnh rồi dùng YOLO
+            if not result:
+                print("🔄 [FALLBACK] PDF không có text, chuyển sang YOLO pipeline...")
+                converted_image_path = convert_to_image(temp_file_path)
+                result = process_cv_pipeline(converted_image_path, jd_dict)
+        else:
+            # Ảnh → YOLO pipeline (như cũ)
+            print("🖼️ [PIPELINE] Sử dụng YOLO + OCR pipeline")
+            converted_image_path = convert_to_image(temp_file_path)
+            result = process_cv_pipeline(converted_image_path, jd_dict)
         
         if not result:
             raise HTTPException(status_code=400, detail="Không tìm thấy vùng dữ liệu CV")
