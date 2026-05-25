@@ -4,9 +4,10 @@ import numpy as np
 from ultralytics import YOLO
 
 # ================= CẤU HÌNH ĐƯỜNG DẪN =================
-MODEL_PATH = r"D:\Project\DetectCVLasted\runs8\weights\best.pt"           # Đường dẫn model YOLO xịn nhất
-TEST_DIR = r"data\raw_cvs"                      # Thư mục chứa 30 ảnh CV test
-OUTPUT_CROP_DIR = r"data\cropped_images"        # Thư mục lưu ảnh đã cắt
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(_script_dir, "runs8", "weights", "best.pt")           # Đường dẫn model YOLO xịn nhất
+TEST_DIR = os.path.join(_script_dir, "data", "raw_cvs")                         # Thư mục chứa ảnh CV test
+OUTPUT_CROP_DIR = os.path.join(_script_dir, "data", "cropped_images")           # Thư mục lưu ảnh đã cắt
 # ======================================================
 
 from src.cropper import crop_and_save_regions

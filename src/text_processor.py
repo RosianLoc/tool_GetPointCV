@@ -265,29 +265,42 @@ def clean_cv_data(raw_data):
     # Lọc lấy từ khóa chính xác cho Level và xóa nó khỏi Position nếu bị trùng
     extracted_level = final_level
     found_lvl_word = None
+    found_in_pos = False
     
-    search_text = final_level if final_level else final_position
-    
-    if search_text:
+    # Ưu tiên tìm level trong final_position trước để phản ánh đúng cấp bậc ứng tuyển
+    if final_position:
         for lvl in KNOWN_LEVELS:
-            if re.search(rf'\b{lvl}\b', search_text, re.IGNORECASE):
+            if re.search(rf'\b{lvl}\b', final_position, re.IGNORECASE):
+                found_lvl_word = lvl
+                extracted_level = lvl.capitalize()
+                if extracted_level == 'Mid': extracted_level = 'Middle'
+                found_in_pos = True
+                break
+                
+    if not found_lvl_word and final_level:
+        for lvl in KNOWN_LEVELS:
+            if re.search(rf'\b{lvl}\b', final_level, re.IGNORECASE):
                 found_lvl_word = lvl
                 extracted_level = lvl.capitalize()
                 if extracted_level == 'Mid': extracted_level = 'Middle'
                 break
                 
     if found_lvl_word:
-        final_position = re.sub(rf'\b{found_lvl_word}\b', '', final_position, flags=re.IGNORECASE).strip()
-        final_position = re.sub(r'^[-,\s]+', '', final_position)
-        
-        # Nếu final_level có chứa text khác ngoài chữ level (ví dụ YOLO gộp nhầm Intern và Position)
-        # Thì sau khi lấy được 'Intern', ta ném phần chữ còn lại sang cho position.
-        remaining_level_text = re.sub(rf'\b{found_lvl_word}\b', '', final_level, flags=re.IGNORECASE).strip()
-        remaining_level_text = re.sub(r'^[-,\s]+', '', remaining_level_text)
-        # Xóa ký tự lẻ khỏi phần remaining (có thể là ký tự lẹm viền)
-        remaining_level_text = _strip_orphan_chars(remaining_level_text, 'both')
-        if remaining_level_text and remaining_level_text.lower() not in final_position.lower():
-            final_position = (final_position + " " + remaining_level_text).strip()
+        if found_in_pos:
+            final_position = re.sub(rf'\b{found_lvl_word}\b', '', final_position, flags=re.IGNORECASE).strip()
+            final_position = re.sub(r'^[-,\s]+', '', final_position)
+        else:
+            final_position = re.sub(rf'\b{found_lvl_word}\b', '', final_position, flags=re.IGNORECASE).strip()
+            final_position = re.sub(r'^[-,\s]+', '', final_position)
+            
+            # Nếu final_level có chứa text khác ngoài chữ level (ví dụ YOLO gộp nhầm Intern và Position)
+            # Thì sau khi lấy được 'Intern', ta ném phần chữ còn lại sang cho position.
+            remaining_level_text = re.sub(rf'\b{found_lvl_word}\b', '', final_level, flags=re.IGNORECASE).strip()
+            remaining_level_text = re.sub(r'^[-,\s]+', '', remaining_level_text)
+            # Xóa ký tự lẻ khỏi phần remaining (có thể là ký tự lẹm viền)
+            remaining_level_text = _strip_orphan_chars(remaining_level_text, 'both')
+            if remaining_level_text and remaining_level_text.lower() not in final_position.lower():
+                final_position = (final_position + " " + remaining_level_text).strip()
     
     # Dọn rác lần cuối cho position (xóa ký tự lẻ còn sót)
     final_position = _strip_orphan_chars(final_position, 'both')

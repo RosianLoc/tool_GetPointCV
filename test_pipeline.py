@@ -6,7 +6,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 from main import process_cv_pipeline
 
-image_path = r"d:\Project\DetectCVLasted\data\raw_cvs\28627441-IT_322.png"
+import os
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+image_path = os.path.join(_script_dir, "data", "raw_cvs", "28627441-IT_322.png")
 jd = {
     "position": "Data Engineer",
     "level": "Senior",

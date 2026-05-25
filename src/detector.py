@@ -1,6 +1,12 @@
+import os
 from ultralytics import YOLO
 
-def get_cv_boxes(image_path, model_path=r"D:\Project\DetectCVLasted\runs8\weights\best.pt"):
+# Resolve dynamic relative path to runs8/weights/best.pt
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_parent_dir = os.path.dirname(_current_dir)
+_default_model = os.path.join(_parent_dir, "runs8", "weights", "best.pt")
+
+def get_cv_boxes(image_path, model_path=_default_model):
     """
     Load model YOLO và trả về danh sách tọa độ, nhãn của các vùng trên CV.
     """
@@ -43,7 +49,7 @@ def get_cv_boxes(image_path, model_path=r"D:\Project\DetectCVLasted\runs8\weight
 
 # --- Phần này chỉ chạy khi bạn test trực tiếp file detector.py ---
 if __name__ == "__main__":
-    test_image = r"D:\Project\DetectCVLasted\data\raw_cvs\2d187349-IT_56.png"
+    test_image = os.path.join(_parent_dir, "data", "raw_cvs", "2d187349-IT_56.png")
     
     # Gọi hàm và in kết quả ra xem thử
     cv_regions = get_cv_boxes(test_image)

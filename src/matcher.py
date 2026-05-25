@@ -83,7 +83,7 @@ def calculate_cv_score(cv_data, jd_criteria):
     if jd_gpa <= 0:
         details["gpa"] = {"jd_value": jd_gpa, "cv_value": cv_gpa, "score": 0, "note": "JD khong yeu cau, bo qua"}
     else:
-        score = 25 if cv_gpa >= jd_gpa else round((cv_gpa / jd_gpa) * 25, 2)
+        score = 25 if cv_gpa >= jd_gpa else round((cv_gpa / jd_gpa) * 25)
         details["gpa"] = {"jd_value": jd_gpa, "cv_value": cv_gpa, "score": score}
         total += score
 
@@ -123,7 +123,7 @@ def calculate_cv_score(cv_data, jd_criteria):
                 if fuzz.partial_ratio(s, cv_skill_text) >= THRESHOLDS["skill"]:
                     matched.append(raw_s)
 
-        score = round((len(matched) / len(jd_skills_raw)) * 30, 2)
+        score = round((len(matched) / len(jd_skills_raw)) * 30)
         details["skill"] = {
             "jd_value": jd_skills_raw,
             "cv_value": cv_skill_raw_text,
@@ -133,5 +133,5 @@ def calculate_cv_score(cv_data, jd_criteria):
         }
         total += score
 
-    details["total"] = round(total, 2)
+    details["total"] = round(total)
     return details
